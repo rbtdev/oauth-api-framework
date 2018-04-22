@@ -1,0 +1,19 @@
+{
+  "name": "react-oauth",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "react": "^16.3.1",
+    "react-dom": "^16.3.1",
+    "react-facebook-login": "^4.0.1",
+    "react-google-login": "^3.2.0",
+    "react-scripts": "1.1.4"
+  },
+  "proxy": "https://localhost:3003/",
+  "scripts": {
+    "start": "HTTPS=true PORT=3001 react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  }
+}
