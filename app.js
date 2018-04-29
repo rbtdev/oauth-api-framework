@@ -2,6 +2,7 @@ var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
 var passport = require('passport');
+var paginate = require('express-paginate');
 
 // Use Facebook and Google token authentication with passport
 var FacebookToken = require('passport-facebook-token');
@@ -14,14 +15,9 @@ var fs = require('fs');
 var validator = require('express-validator')
 var bodyParser = require('body-parser');
 
-var usersRouter = require('./routes/users');
-var messagesRouter = require('./routes/messages');
-var LoginsRouter = require('./routes/logins');
-var signupRouter = require('./routes/signup');
-
+var routes = require('./routes');
 var loginsController = require('./controllers/logins');
 var usersController = require('./controllers/users');
-
 var config = require('./config')
 
 // Configure the Facebook strategy for use by Passport.
@@ -36,11 +32,9 @@ var config = require('./config')
 // Toekn authentication mechanisms
 passport.use(new FacebookToken(config.fb, loginsController.facebookProfile));
 passport.use(new GoogleToken(config.google, loginsController.googleProfile));
-passport.use(new LocalStrategy({ usernameField: 'email'}, loginsController.localUser));
+passport.use(new LocalStrategy({ usernameField: 'email' }, loginsController.localUser));
 passport.serializeUser(usersController.serialize);
 passport.deserializeUser(usersController.deserialize);
-
-var passport = require('passport');
 
 var app = express();
 
@@ -59,22 +53,12 @@ app.use(passport.session());
 
 
 // Set up our API routes
-var loginsRouter = LoginsRouter(passport);
-app.use(validator());
-app.use('/api/login', loginsRouter);
-app.use('/api/logout', logout );
-app.use('/api/signup', signupRouter);
-app.use('/api/users', isLoggedIn, usersRouter);
-app.use('/api/messages', isLoggedIn, messagesRouter);
-
-function isLoggedIn (req, res, next) {
-  if (req.user) return next()
-  else return res.status(401).json('Not Authenticated');
-}
-function logout (req, res, next) {
-  req.logout();
-  res.json(null);
-};
+app.use(express.static('public'))
+app.use('/', routes.web);
+app.use(paginate.middleware(10, 50));
+app.use(jsonApi);
+app.use('/api', routes.api);
+require('./utils/routes').list('/api');
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
@@ -92,4 +76,43 @@ app.use(function (err, req, res, next) {
   res.render('error');
 });
 
+//
+// Middleware to format a JSON API response
+// If error is reported, send a body with an "errors" array,
+// if no error is reported, send a body with a "data" object (could be an array)
+// If options.paginate is true, send a "paginate" object which has
+// a "next" and "prev" api URI
+//
+function jsonApi(req, res, next) {
+  res.jsonApi = (err, data, _options) => {
+    let options = _options || {};
+    payload = {};
+    if (err) {
+      console.error(err);
+      if (Array.isArray(err)) payload.errors = err;
+      else payload.errors = [err];
+    }
+    else {
+      if (options.paginate && res.locals.paginate) {
+        let prevPage = res.locals.paginate.page-1;
+        let nextPage = res.locals.paginate.page+1;
+        let prev = {
+          page: prevPage,
+          limit: res.locals.paginate.limit
+        }
+        let next = {
+          page: nextPage,
+          limit: res.locals.paginate.limit
+        };
+        payload.paginate = {
+          next: next,
+          prev: prevPage?prev:null
+        }
+      }
+      payload.data = data || {};
+    }
+    res.json(payload);
+  }
+  next();
+}
 module.exports = app;

@@ -9,30 +9,16 @@ const api = chai.request.agent(app)
 
 
 const testUser = {
-  email: 'rob@rob.com',
+  email: 'rob.thuleen@gmail.com',
   password: 'hello',
   first_name: "Rob",
-  last_name: "User",
-  address: "1234 Main St, Anytown, Ca, 91111",
-  phone_number: "555-555-5555",
-  image: ''
-}
-
-const testUser2 = {
-  email: 'joe@rob.com',
-  password: 'hello',
-  first_name: "Joe",
-  last_name: "User",
-  address: "12345 Main St, Anytown, Ca, 91111",
-  phone_number: "555-555-5555",
+  last_name: "Thuleen",
+  address: "1134 Felspar St #3, San Diego, Ca",
+  phone_number: "858-888-3458",
   image: ''
 }
 
 var user = null;
-var user1 = null;
-var user2 = null;
-
-
 
 function sleep(ms) {
   return new Promise(async (resolve, reject) => {
@@ -64,23 +50,10 @@ describe('Create a new user with a password', function () {
       .send(testUser)
       .end(function (err, res) {
         console.log('Response Body:\n', res.body);
-        user1 = res.body;
         res.should.have.status(200);
         done();
       });
-  });
-
-  it('should create a new user with a password', function (done) {
-    api
-      .post('/api/signup')
-      .send(testUser2)
-      .end(function (err, res) {
-        console.log('Response Body:\n', res.body);
-        user2 = res.body;
-        res.should.have.status(200);
-        done();
-      });
-  });
+  })
 })
 
 
@@ -91,8 +64,6 @@ describe('Log in as user', function () {
       .post('/api/login')
       .send({ email: 'xxxxxxxxxx', password: testUser.password })
       .end(function (err, res) {
-        user = res.body;
-        console.log('====================== Response Body:\n', user);
         res.should.have.status(401);
         done();
       });
@@ -103,8 +74,6 @@ describe('Log in as user', function () {
       .post('/api/login')
       .send({ email: testUser.email, password: 'xxxxxxxxx' })
       .end(function (err, res) {
-        user = res.body;
-        console.log('====================== Response Body:\n', user);
         res.should.have.status(401);
         done();
       });
@@ -115,7 +84,7 @@ describe('Log in as user', function () {
       .post('/api/login')
       .send({ email: testUser.email, password: testUser.password })
       .end(function (err, res) {
-        user = res.body;
+        user = res.body.data;
         console.log('====================== Response Body:\n', user);
         res.should.have.status(200);
         done();
@@ -126,16 +95,17 @@ describe('Log in as user', function () {
     api
       .put('/api/users/' + user.id)
       .send({
-        'first_name': 'Eric',
-        'last_name': 'Gelencser'
+        'first_name': 'Joe',
+        'last_name': 'User 2'
       })
       .end(function (error, response) {
         response.should.have.status(200);
         response.should.be.json;
         response.body.should.be.a('object');
-        response.body.first_name.should.equal('Eric')
-        response.body.last_name.should.equal('Gelencser')
+        response.body.data.first_name.should.equal('Joe')
+        response.body.data.last_name.should.equal('User 2')
         done();
       });
   });
-});
+})
+

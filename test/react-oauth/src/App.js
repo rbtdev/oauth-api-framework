@@ -8,11 +8,23 @@ class App extends Component {
 
   constructor(props) {
     super(props);
-    this.getInbox = this.getInbox.bind(this);
     this.state = {
       user: null,
-      inbox: null
+      config: null,
     }
+    var configUrl = '/api/app-config';
+    fetch(configUrl, {
+      credentials: 'include'
+    })
+      .then(resp => {
+        if (resp.ok) {
+          resp.json()
+            .then(body => {
+              if (body.data) this.setState({ config: body.data })
+              else console.log(body.errors)
+            })
+        }
+      })
     var url = '/api/users/me';
     fetch(url, {
       credentials: 'include'
@@ -20,28 +32,14 @@ class App extends Component {
       .then(resp => {
         if (resp.ok) {
           resp.json()
-            .then(me => {
-              this.setState({ user: me })
-              this.getReceivedMessages(me);
+            .then(body => {
+              this.setState({ user: body.data })
             })
         }
         else {
           this.setState({ user: null })
         }
       })
-  }
-
-  getInbox(user) {
-    let _this = this;
-    return new Promise((resolve, reject) => {
-      fetch('/api/users/' + user.id + '/inbox', { credentials: 'include' })
-        .then(resp => {
-          if (resp.ok) return resp.json()
-        })
-        .then(inbox => {
-          _this.setState({ inbox: inbox })
-        })
-    })
   }
 
   //
@@ -68,10 +66,9 @@ class App extends Component {
           if (resp.ok) return resp.json()
           else throw Error(resp.statusText);
         })
-        .then(user => {
+        .then(body => {
           // We have a user object,  so set the state with the user
-          this.setState({ user: user })
-          this.getInbox(user);
+          this.setState({ user: body.data })
         })
         .catch(err => {
           alert(err);
@@ -89,8 +86,8 @@ class App extends Component {
           return resp.json();
         }
       })
-      .then(user => {
-        this.setState({ user: user })
+      .then(body => {
+        this.setState({ user: body.data })
       })
   }
 
@@ -110,27 +107,23 @@ class App extends Component {
             <div>Profile</div>
             <pre>{JSON.stringify(this.state.user, null, 2)}</pre>
           </div>
-          <div id='inbox'>
-            <div>Inbox</div>
-            <pre>{JSON.stringify(this.state.inbox, null, 2)}</pre>
-          </div>
         </div>
-    } else {
+    } else if (this.state.config) {
       body = <div>
         <FacebookLogin
-          appId="592288191113150"
+          appId={this.state.config.oauth.facebook.clientID}
           autoLoad={false}
 
           callback={this.loginResponse.bind(this, 'facebook')} />
         <GoogleLogin
-          clientId="945721617787-p45du0mj6pdn3anu6mhm74prb0aduvh3.apps.googleusercontent.com"
+          clientId={this.state.config.oauth.google.clientID}
           buttonText="Login with Google"
           autoLoad={false}
           onSuccess={this.loginResponse.bind(this, 'google')}
           onFailure={this.loginResponse.bind(this, 'google')}
         />,
       </div>
-    }
+    } else body = <div> Loading </div>
     return (
       <div className="App">
         <header className="App-header">

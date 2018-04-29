@@ -1,8 +1,7 @@
 const Sequelize = require('sequelize');
 const config = require('./config').db;
 const bcrypt = require('bcryptjs');
-const db = new Sequelize(config.database, config.user, config.password, {
-  host: config.host,
+const dbOptions = {
   dialect: 'postgres',
   pool: {
     max: 5,
@@ -11,7 +10,15 @@ const db = new Sequelize(config.database, config.user, config.password, {
     idle: 10000
   },
   operatorsAliases: false
-});
+}
+
+let db = null;
+if (config.dbUrl) {
+  db = new Sequelize(config.dbUrl, dbOptions);
+} else {
+  dbOptions.host = config.host;
+  db = new Sequelize(config.database, config.user, config.password, dbOptions);
+}
 
 const User = db.define('user', {
   first_name: Sequelize.STRING,
@@ -42,7 +49,7 @@ User.createWithHash = function (userData) {
         })
           .spread((user, created) => {
             if (created) {
-              user = user.get({ plain: true });
+              user = user.get({plain: true});
               delete user.password;
               resolve(user);
             } else reject('Email already exists')
@@ -59,7 +66,7 @@ User.Instance.prototype.validatePassword = function (password) {
 }
 
 const Message = db.define('message', {
-  text: Sequelize.TEXT
+  content: Sequelize.TEXT,
 });
 
 User.hasMany(Message, {
@@ -74,9 +81,14 @@ User.hasMany(Message, {
   otherKey: 'userId'
 })
 
-db.sync({ force: true });
+db.sync()
+  .then(db => {
+    console.log('Connected to database ' + db.config.database + ' on ' + db.config.host + ' as user ' + db.config.username)
+  })
+  .catch(err => {
+    console.error(err);
+  });
 
-console.log('Connected to database ' + config.database + ' on ' + config.host + ' as user ' + config.user)
 
 module.exports = {
   db: db,

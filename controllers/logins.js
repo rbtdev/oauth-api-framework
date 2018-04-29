@@ -1,30 +1,23 @@
 const User = require('../models').User;
 
-function localUser(email, password, cb) {
-  User.findOne({
+async function localUser(email, password, cb) {
+  let user = await User.findOne({
     where: {
       email: email
     }
-  })
-    .then(user => {
-      if (user) {
-        user.validatePassword(password)
-          .then(match => {
-            if (match) {
-              user = user.get({ plain: true });
-              delete user.password;
-              return cb(null, user);
-            } else {
-              return cb(null, false, 'invalid password');
-            }
-          })
-      } else {
-        cb(null, false, 'user not found');
-      }
-    })
-    .catch(err => {
-      cb(err);
-    })
+  }).catch(cb);
+  if (user) {
+    let match = await user.validatePassword(password).catch(cb);
+    if (match) {
+      user = user.get({ plain: true });
+      delete user.password;
+      return cb(null, user);
+    } else {
+      return cb(null, false, 'invalid password');
+    }
+  } else {
+    cb(null, false, 'user not found');
+  }
 }
 //
 // The profile functions are called by passoport once a successful
@@ -40,8 +33,8 @@ function localUser(email, password, cb) {
 // Send th user back to passport in the cb function.  The user will
 // hen be serialized ans a session will be created
 //
-function facebookProfile(accessToken, refreshToken, profile, cb) {
-  User.findOrCreate({
+async function facebookProfile(accessToken, refreshToken, profile, cb) {
+  let [user, created] = await User.findOrCreate({
     where: {
       $or: {
         fb_id: profile._json.id,
@@ -55,21 +48,16 @@ function facebookProfile(accessToken, refreshToken, profile, cb) {
       email: profile._json.email,
       image: profile._json.picture.data.url
     }
-  })
-    .spread((user, created) => {
-      user = user.get({ plain: true })
-      user.isNew = created;
-      cb(null, user);
-    })
-    .catch(err => {
-      console.error(err);
-      cb(err);
-    })
-
+  }).catch(cb);
+  if (user) {
+    user = user.get({ plain: true })
+    user.isNew = created;
+    cb(null, user);
+  }
 }
 
-function googleProfile(accessToken, refreshToken, profile, cb) {
-  User.findOrCreate({
+async function googleProfile(accessToken, refreshToken, profile, cb) {
+  let [user, created] = await User.findOrCreate({
     where: {
       $or: {
         google_id: profile._json.id,
@@ -83,16 +71,12 @@ function googleProfile(accessToken, refreshToken, profile, cb) {
       email: profile._json.email,
       google_id: profile._json.id
     }
-  })
-    .spread((user, created) => {
-      user = user.get({ plain: true })
-      user.isNew = created;
-      cb(null, user);
-    })
-    .catch(err => {
-      console.error(err);
-      cb(err);
-    })
+  }).catch(cb);
+  if (user) {
+    user = user.get({ plain: true })
+    user.isNew = created;
+    cb(null, user);
+  }
 }
 
 module.exports = {

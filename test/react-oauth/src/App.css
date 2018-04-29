@@ -23,12 +23,8 @@
 }
 
 #profile {
+  display: none;
   float: right;
-  text-align: left;
-  width: 300px;
-}
-#inbox {
-  float: left;
   text-align: left;
   width: 300px;
 }
