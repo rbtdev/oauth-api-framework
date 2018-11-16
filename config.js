@@ -11,13 +11,17 @@ const googleAuthOptions = {
 
 const dbConfig = {
     dbUrl: process.env.DATABASE_URL || null, // Use a url if available
-    host: process.env.DB_HOST || 'localhost',
-    database: process.env.DB_NAME || 'test',
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'postgres'
+    host: process.env.POSTGRES_HOST || 'localhost',
+    database: process.env.POSTGRES_DB || 'test',
+    user: process.env.POSTGRES_USER|| 'postgres',
+    password: process.env.POSTGRES_PASSWORD || 'postgres'
 }
-module.exports = {
+
+const config = { 
     google: googleAuthOptions,
     fb: fbAuthOptions,
     db: dbConfig
 }
+
+console.log("Using configuration settings: " + JSON.stringify(config, null, 2))
+module.exports = config;

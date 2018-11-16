@@ -1,4 +1,5 @@
 const User = require('../models').User;
+const passport = require('passport');
 
 async function localUser(email, password, cb) {
   let user = await User.findOne({
@@ -37,16 +38,18 @@ async function facebookProfile(accessToken, refreshToken, profile, cb) {
   let [user, created] = await User.findOrCreate({
     where: {
       $or: {
-        fb_id: profile._json.id,
+        fbId: profile._json.id,
         email: profile._json.email
       }
     },
     defaults: {
-      fb_id: profile._json.id,
-      first_name: profile._json.name.split(' ')[0],
-      last_name: profile._json.name.split(' ')[1] || '',
+      fbId: profile._json.id,
+      firstName: profile._json.name.split(' ')[0],
+      lastName: profile._json.name.split(' ')[1] || '',
       email: profile._json.email,
-      image: profile._json.picture.data.url
+      image: profile._json.picture.data.url,
+      bio: "I love using Tutti",
+      birthday: profile._json.birthday,
     }
   }).catch(cb);
   if (user) {
@@ -60,16 +63,18 @@ async function googleProfile(accessToken, refreshToken, profile, cb) {
   let [user, created] = await User.findOrCreate({
     where: {
       $or: {
-        google_id: profile._json.id,
+        googleId: profile._json.id,
         email: profile._json.email
       }
     },
     defaults: {
-      first_name: profile._json.given_name,
-      last_name: profile._json.family_name,
+      firstName: profile._json.given_name,
+      lastName: profile._json.family_name,
       image: profile._json.picture,
       email: profile._json.email,
-      google_id: profile._json.id
+      googleId: profile._json.id,
+      bio: "",
+      birthday: profile._json.birthday,
     }
   }).catch(cb);
   if (user) {
@@ -79,8 +84,35 @@ async function googleProfile(accessToken, refreshToken, profile, cb) {
   }
 }
 
+//
+// Handle passport verification for all strategies
+// If passport verification is successful, send the response to
+// the client with the current user object
+// If an error, send an error response
+//
+function login(strategy) {
+  return (req, res, next) => {
+    passport.authenticate(strategy, sendResponse)(req, res, next);
+
+    function sendResponse (err, user, info) {
+        if (err) return res.status(500).json(err);
+        if (user) {
+            console.log('Login Successful');
+            req.login(user, (err => {
+                return res.jsonApi(null, req.user)
+            }));
+        }
+        else {
+            console.log('Login unsuccessful', info);
+            return res.status(401).jsonApi(info);
+        }
+    }
+  }
+}
+
 module.exports = {
   facebookProfile: facebookProfile,
   googleProfile: googleProfile,
-  localUser: localUser
+  localUser: localUser,
+  login: login
 }

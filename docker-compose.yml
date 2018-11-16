@@ -1,0 +1,17 @@
+version: "3"
+services:
+  app:
+    build: .
+    depends_on:
+      - postgres
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+      - "9229:9229"
+    env_file: .env_example
+    command: nodemon --inspect=0.0.0.0:9229 ./bin/www
+    volumes:
+      - .:/code
+  postgres:
+    image: postgres:9.6.8-alpine
+    env_file: .env_example

@@ -22,6 +22,13 @@ function apiRoutes() {
             register(route, resource.router);
         }
     })
+    router.use((req, res, next)=> {
+        res.status(404).jsonApi('resource not found');
+    })
+// error handler
+    router.use(function (err, req, res, next) {
+        res.status(500).jsonApi(err)
+    });
     return router;
 }
 

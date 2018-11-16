@@ -8,17 +8,14 @@ var paginate = require('express-paginate');
 var FacebookToken = require('passport-facebook-token');
 var GoogleToken = require('passport-google-token').Strategy;
 var LocalStrategy = require('passport-local');
-
-var https = require('https');
-var http = require('http');
-var fs = require('fs');
-var validator = require('express-validator')
 var bodyParser = require('body-parser');
 
 var routes = require('./routes');
 var loginsController = require('./controllers/logins');
 var usersController = require('./controllers/users');
 var config = require('./config')
+var Models = require('./models');
+Models.connect();
 
 // Configure the Facebook strategy for use by Passport.
 //
@@ -67,6 +64,7 @@ app.use(function (req, res, next) {
 
 // error handler
 app.use(function (err, req, res, next) {
+  console.error(JSON.stringify(err.stack, null, 2))
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};

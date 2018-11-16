@@ -27,6 +27,9 @@ var ssl = {
   cert: fs.readFileSync('./ssl/cert.pem')
 };
 
+console.log(`HTTP listening on port ${httpPort}`);
+console.log(`HTTPS listening on port ${httpsPort}`);
+
 http.createServer(app).listen(httpPort);
 https.createServer(ssl, app).listen(httpsPort)
 

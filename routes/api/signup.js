@@ -5,13 +5,12 @@ const User = require('../../models').User;
 
 router.post('/', async function (req, res, next) {
   let userData = req.body;
-  let user = await User.createWithHash(userData).catch(error);
-  if (user) res.jsonApi(null, user);
-
-  function error(err) {
-    if (err = 'Email already exisit') res.status(409).jsonApi(err);
-    else res.status(500).json(err);
-  }
+  let [err, user] = await User.createWithHash(userData);
+  if (err) {
+      if (err = 'Email already exisit') res.status(409).jsonApi(err);
+      else res.status(500).json(err);
+    }
+    else res.jsonApi(null, user)
 });
 
 module.exports = {
